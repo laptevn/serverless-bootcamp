@@ -1,0 +1,34 @@
+"""category"""
+type Category {
+    id: ID!
+    name: String!
+}
+
+"""product"""
+type Product {
+    id: ID!
+    name: String!
+    category: Category!
+}
+
+type Query {
+    categories: [Category!]!
+    category(id: Float!): Category!
+    products(categoryId: Float!): [Product!]!
+    product(id: Float!): Product!
+}
+
+type Mutation {
+    addProduct(product: ProductDTO!): Product!
+    updateProduct(id: Float!, product: ProductDTO!): Product!
+    removeProduct(id: Float!): Boolean!
+}
+
+input CategoryDTO {
+    name: String!
+}
+
+input ProductDTO {
+    name: String!
+    category: Float!
+}

@@ -1,18 +1,36 @@
-import * as sns from '@aws-cdk/aws-sns';
-import * as subs from '@aws-cdk/aws-sns-subscriptions';
-import * as sqs from '@aws-cdk/aws-sqs';
 import * as cdk from '@aws-cdk/core';
+import * as appsync from '@aws-cdk/aws-appsync';
+import * as lambda from '@aws-cdk/aws-lambda';
 
 export class ServerlessStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const queue = new sqs.Queue(this, 'ServerlessQueue', {
-      visibilityTimeout: cdk.Duration.seconds(300)
+    const api = new appsync.GraphqlApi(this, 'api', {
+      name: 'api',
+      schema: appsync.Schema.fromAsset('graphql/schema.graphql')
     });
 
-    const topic = new sns.Topic(this, 'ServerlessTopic');
+    this.addLambdaResolver(api, 'getCategories', 'Query', 'categories');
+    this.addLambdaResolver(api, 'getCategory', 'Query', 'category');
+    this.addLambdaResolver(api, 'getProducts', 'Query', 'products');
+    this.addLambdaResolver(api, 'getProduct', 'Query', 'product');
+    this.addLambdaResolver(api, 'addProduct', 'Mutation', 'addProduct');
+    this.addLambdaResolver(api, 'updateProduct', 'Mutation', 'updateProduct');
+    this.addLambdaResolver(api, 'removeProduct', 'Mutation', 'removeProduct');
+  }
 
-    topic.addSubscription(new subs.SqsSubscription(queue));
+  private addLambdaResolver(api: appsync.GraphqlApi, lambdaName: string, resolverTypeName: string, resolverFieldName: string) {
+    const lambdaFunction = new lambda.Function(this, lambdaName, {
+      runtime: lambda.Runtime.NODEJS_16_X,
+      handler: lambdaName + '.handler',
+      code: lambda.Code.fromAsset('lambda/handlers'),
+      memorySize: 1024
+    });
+    const dataSource = api.addLambdaDataSource(lambdaName + 'DataSource', lambdaFunction);
+    dataSource.createResolver({
+      typeName: resolverTypeName,
+      fieldName: resolverFieldName
+    });
   }
 }
