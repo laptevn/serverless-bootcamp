@@ -1,0 +1,30 @@
+{
+  "name": "serverless",
+  "version": "0.1.0",
+  "bin": {
+    "serverless": "bin/serverless.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "aws-cdk": "1.178.0",
+    "@aws-cdk/assertions": "1.178.0",
+    "@types/jest": "^27.5.0",
+    "@types/node": "10.17.27",
+    "@types/prettier": "2.6.0",
+    "jest": "^27.5.1",
+    "ts-jest": "^27.1.4",
+    "ts-node": "^10.8.1",
+    "typescript": "~3.9.7"
+  },
+  "dependencies": {
+    "@aws-cdk/aws-sns": "1.178.0",
+    "@aws-cdk/aws-sns-subscriptions": "1.178.0",
+    "@aws-cdk/aws-sqs": "1.178.0",
+    "@aws-cdk/core": "1.178.0"
+  }
+}
