@@ -1,30 +1,10 @@
 import {Product} from "../models/product";
 import {CategoryIdEvent} from "../models/categoryIdEvent";
+import {ProductRepository} from "../repositories/productRepository";
+import {CategoryRepository} from "../repositories/categoryRepository";
+
+const productRepository = new ProductRepository(new CategoryRepository());
 
 exports.handler = async function (event: CategoryIdEvent): Promise<Product[]> {
-    return [
-        {
-            id: 1,
-            name: "product 1",
-            category: {
-                id: 1,
-                name: "category 1"
-            }
-        },
-        {
-            id: 2,
-            name: "product 2",
-            category: {
-                id: 1,
-                name: "category 1"
-            }
-        },
-        {
-            id: 3,
-            name: "product 3",
-            category: {
-                id: 2,
-                name: "category 2"
-            }
-        }];
+    return await productRepository.getProducts(event.arguments.categoryId);
 };

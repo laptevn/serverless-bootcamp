@@ -1,5 +1,5 @@
 export type IdEvent = {
     arguments: {
-        id: number;
+        id: string;
     }
 }

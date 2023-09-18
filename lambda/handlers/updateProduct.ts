@@ -1,14 +1,10 @@
 import {Product} from "../models/product";
-import {UpdateProductEvent} from "../models/updateProductEvent";
+import {ProductEvent} from "../models/productEvent";
+import {ProductRepository} from "../repositories/productRepository";
+import {CategoryRepository} from "../repositories/categoryRepository";
 
-exports.handler = async function (event: UpdateProductEvent): Promise<Product> {
-    console.log(event.arguments);
-    return {
-        id: 1,
-        name: "product 1",
-        category: {
-            id: 1,
-            name: "category 1"
-        }
-    };
+const productRepository = new ProductRepository(new CategoryRepository());
+
+exports.handler = async function (event: ProductEvent): Promise<Product> {
+    return productRepository.updateProduct(event);
 };

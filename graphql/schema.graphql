@@ -1,34 +1,43 @@
 """category"""
 type Category {
-    id: ID!
+    id: String!
     name: String!
+    description: String!
 }
 
 """product"""
 type Product {
-    id: ID!
+    id: String!
     name: String!
+    description: String!
+    price: Float!
+    currency: String!
+    weight: Float!
+    imageUrl: String!
     category: Category!
 }
 
 type Query {
     categories: [Category!]!
-    category(id: Float!): Category!
-    products(categoryId: Float!): [Product!]!
-    product(id: Float!): Product!
+    category(id: String!): Category!
+    products(categoryId: String!): [Product!]!
+    product(id: String!): Product!
 }
 
 type Mutation {
     addProduct(product: ProductDTO!): Product!
-    updateProduct(id: Float!, product: ProductDTO!): Product!
-    removeProduct(id: Float!): Boolean!
-}
-
-input CategoryDTO {
-    name: String!
+    updateProduct(product: ProductDTO!): Product!
+    removeProduct(id: String!): Boolean!
 }
 
 input ProductDTO {
+    id: String!
     name: String!
-    category: Float!
+    description: String!
+    price: Float!
+    currency: String!
+    weight: Float!
+    imageUrl: String!
+    category: String!
+    supplier: String!
 }

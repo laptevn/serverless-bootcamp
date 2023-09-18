@@ -1,5 +1,5 @@
 export type CategoryIdEvent = {
     arguments: {
-        categoryId: number;
+        categoryId: string;
     }
 }

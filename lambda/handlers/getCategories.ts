@@ -1,13 +1,8 @@
 import {Category} from "../models/category";
+import {CategoryRepository} from "../repositories/categoryRepository";
 
-exports.handler = async function (): Promise<Category[]> {
-    return [
-        {
-            id: 1,
-            name: "category 1"
-        },
-        {
-            id: 2,
-            name: "category 2"
-        }];
+const categoryRepository = new CategoryRepository();
+
+exports.handler = function(): Promise<Category[]> {
+    return categoryRepository.getCategories();
 };
