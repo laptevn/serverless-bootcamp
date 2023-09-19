@@ -34,10 +34,13 @@ export class ServerlessStack extends cdk.Stack {
         this.addLambdaResolver(api, 'getCategories', 'Query', 'categories', table);
         this.addLambdaResolver(api, 'getCategory', 'Query', 'category', table);
         this.addLambdaResolver(api, 'getProducts', 'Query', 'products', table);
+        this.addLambdaResolver(api, 'getProductsBySupplier', 'Query', 'productsBySupplier', table);
         this.addLambdaResolver(api, 'getProduct', 'Query', 'product', table);
         this.addLambdaResolver(api, 'addProduct', 'Mutation', 'addProduct', table);
         this.addLambdaResolver(api, 'updateProduct', 'Mutation', 'updateProduct', table);
         this.addLambdaResolver(api, 'removeProduct', 'Mutation', 'removeProduct', table);
+        this.addLambdaResolver(api, 'getSuppliers', 'Query', 'suppliers', table);
+        this.addLambdaResolver(api, 'getSupplier', 'Query', 'supplier', table);
     }
 
     private addLambdaResolver(api: appsync.GraphqlApi, lambdaName: string, resolverTypeName: string, resolverFieldName: string, table: dynamodb.Table) {

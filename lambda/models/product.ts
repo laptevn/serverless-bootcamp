@@ -1,4 +1,5 @@
 import {Category} from "./category";
+import {Supplier} from "./supplier";
 
 export type Product = {
     id: string;
@@ -9,4 +10,5 @@ export type Product = {
     weight: number;
     imageUrl: string;
     category: Category;
+    supplier: Supplier;
 }

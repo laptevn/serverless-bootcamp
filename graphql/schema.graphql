@@ -15,13 +15,23 @@ type Product {
     weight: Float!
     imageUrl: String!
     category: Category!
+    supplier: Supplier!
+}
+
+"""supplier"""
+type Supplier {
+    id: String!
+    name: String!
 }
 
 type Query {
     categories: [Category!]!
     category(id: String!): Category!
     products(categoryId: String!): [Product!]!
+    productsBySupplier(supplierId: String!): [Product!]!
     product(id: String!): Product!
+    suppliers: [Supplier!]!
+    supplier(id: String!): Supplier!
 }
 
 type Mutation {

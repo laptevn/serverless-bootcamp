@@ -4,11 +4,13 @@ import {Entity, Table} from "dynamodb-onetable";
 import {Product} from "../models/product";
 import {CategoryRepository} from "./categoryRepository";
 import {ProductEvent} from "../models/productEvent";
+import {SupplierRepository} from "./supplierRepository";
 
 export class ProductRepository {
     private readonly productModel;
 
-    constructor(private readonly categoryRepository: CategoryRepository) {
+    constructor(private readonly categoryRepository: CategoryRepository,
+                private readonly supplierRepository: SupplierRepository) {
         const client = new DynamoDB.DocumentClient({region: 'us-east-1'});
         const table = new Table({
             client: client,
@@ -27,7 +29,8 @@ export class ProductRepository {
 
         const result: Product[] = [];
         const products = await this.productModel.find({gsi1pk: categoryId}, {index: 'gsi1'});
-        products.forEach(product => {
+        for (const product of products) {
+            const supplier = await this.supplierRepository.getSupplier(product?.supplier as string);
             result.push({
                 id: product.id as string,
                 name: product.name as string,
@@ -40,9 +43,45 @@ export class ProductRepository {
                     id: category.id,
                     name: category.name,
                     description: category.description
+                },
+                supplier: {
+                    id: supplier.id,
+                    name: supplier.name
                 }
             })
-        })
+        }
+        return result;
+    }
+
+    async getProductsBySupplier(supplierId: string): Promise<Product[]> {
+        const supplier = await this.supplierRepository.getSupplier(supplierId);
+        if (!supplier) {
+            throw new Error("Supplier not found");
+        }
+
+        const result: Product[] = [];
+        const products = await this.productModel.find({gsi2pk: supplierId}, {index: 'gsi2'});
+        for (const product of products) {
+            const category = await this.categoryRepository.getCategory(product?.category as string);
+            result.push({
+                id: product.id as string,
+                name: product.name as string,
+                description: product.description as string,
+                price: product.price as number,
+                currency: product.currency as string,
+                weight: product.weight as number,
+                imageUrl: product.imageUrl as string,
+                category: {
+                    id: category.id,
+                    name: category.name,
+                    description: category.description
+                },
+                supplier: {
+                    id: supplier.id,
+                    name: supplier.name
+                }
+            })
+        }
         return result;
     }
 
@@ -56,6 +95,7 @@ export class ProductRepository {
         }
 
         const category = await this.categoryRepository.getCategory(product?.category as string);
+        const supplier = await this.supplierRepository.getSupplier(product?.supplier as string);
         return {
             id: product.id as string,
             name: product.name as string,
@@ -68,6 +108,10 @@ export class ProductRepository {
                 id: category.id,
                 name: category.name,
                 description: category.description
+            },
+            supplier: {
+                id: supplier.id,
+                name: supplier.name
             }
         }
     }

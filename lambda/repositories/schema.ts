@@ -28,6 +28,14 @@ export default {
             supplier: {type: String, required: true},
             gsi1pk: {type: String, value: '${category}'},
             gsi1sk: {type: String, value: '${id}'},
+            gsi2pk: {type: String, value: '${supplier}'},
+            gsi2sk: {type: String, value: '${id}'}
+        },
+        Supplier: {
+            pk: {type: String, value: 'supplier'},
+            sk: {type: String, value: '${id}'},
+            id: {type: String, required: true, unique: true},
+            name: {type: String, required: true}
         }
     }
 }

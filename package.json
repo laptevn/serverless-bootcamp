@@ -9,7 +9,8 @@
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk",
-    "import": "./node_modules/ts-node/dist/bin.js scripts/import.ts"
+    "import": "./node_modules/ts-node/dist/bin.js scripts/import.ts",
+    "migrate": "./node_modules/ts-node/dist/bin.js scripts/migrate.ts"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.121",
@@ -27,6 +28,7 @@
     "@aws-cdk/aws-lambda-nodejs": "^1.204.0",
     "@aws-cdk/core": "1.178.0",
     "aws-sdk": "^2.1459.0",
-    "dynamodb-onetable": "^2.7.1"
+    "dynamodb-onetable": "^2.7.1",
+    "onetable-migrate": "^1.2.0"
   }
 }
