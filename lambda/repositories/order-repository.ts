@@ -1,7 +1,7 @@
 import DynamoDB from "aws-sdk/clients/dynamodb";
 import {Entity, Table} from "dynamodb-onetable";
 import schema from "./schema";
-import {OrderEvent} from "../models/orderEvent";
+import {OrderEvent} from "../models/order-event";
 import {Order} from "../models/order";
 
 export class OrderRepository {

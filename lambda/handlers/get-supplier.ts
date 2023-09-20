@@ -1,5 +1,5 @@
-import {IdEvent} from "../models/idEvent";
-import {SupplierRepository} from "../repositories/supplierRepository";
+import {IdEvent} from "../models/id-event";
+import {SupplierRepository} from "../repositories/supplier-repository";
 import {Supplier} from "../models/supplier";
 
 const supplierRepository = new SupplierRepository();

@@ -72,16 +72,16 @@ export class ServerlessStack extends cdk.Stack {
             projectionType: dynamodb.ProjectionType.ALL
         });
 
-        this.addLambdaResolver(api, 'getCategories', 'Query', 'categories', table);
-        this.addLambdaResolver(api, 'getCategory', 'Query', 'category', table);
-        this.addLambdaResolver(api, 'getProducts', 'Query', 'products', table);
-        this.addLambdaResolver(api, 'getProductsBySupplier', 'Query', 'productsBySupplier', table);
-        this.addLambdaResolver(api, 'getProduct', 'Query', 'product', table);
-        this.addLambdaResolver(api, 'addProduct', 'Mutation', 'addProduct', table);
-        this.addLambdaResolver(api, 'updateProduct', 'Mutation', 'updateProduct', table);
-        this.addLambdaResolver(api, 'removeProduct', 'Mutation', 'removeProduct', table);
-        this.addLambdaResolver(api, 'getSuppliers', 'Query', 'suppliers', table);
-        this.addLambdaResolver(api, 'getSupplier', 'Query', 'supplier', table);
+        this.addLambdaResolver(api, 'get-categories', 'Query', 'categories', table);
+        this.addLambdaResolver(api, 'get-category', 'Query', 'category', table);
+        this.addLambdaResolver(api, 'get-products', 'Query', 'products', table);
+        this.addLambdaResolver(api, 'get-products-by-supplier', 'Query', 'productsBySupplier', table);
+        this.addLambdaResolver(api, 'get-product', 'Query', 'product', table);
+        this.addLambdaResolver(api, 'add-product', 'Mutation', 'addProduct', table);
+        this.addLambdaResolver(api, 'update-product', 'Mutation', 'updateProduct', table);
+        this.addLambdaResolver(api, 'remove-product', 'Mutation', 'removeProduct', table);
+        this.addLambdaResolver(api, 'get-suppliers', 'Query', 'suppliers', table);
+        this.addLambdaResolver(api, 'get-supplier', 'Query', 'supplier', table);
 
         const deadLetterQueue = new Queue(this, "onboarding-dlq", {
             queueName: 'orders-dlq'
@@ -93,13 +93,13 @@ export class ServerlessStack extends cdk.Stack {
                 maxReceiveCount: 3
             }
         })
-        const createOrderFunction = this.addLambdaResolver(api, 'createOrder', 'Mutation', 'createOrder', table, queue.queueUrl);
+        const createOrderFunction = this.addLambdaResolver(api, 'create-order', 'Mutation', 'createOrder', table, queue.queueUrl);
         queue.grantSendMessages(createOrderFunction);
 
-        const notifyCustomerFunction = new lambda.NodejsFunction(this as any, 'notifyCustomer', {
+        const notifyCustomerFunction = new lambda.NodejsFunction(this as any, 'notify-customer', {
             runtime: Runtime.NODEJS_16_X,
             handler: 'handler',
-            entry: 'lambda/handlers/notifyCustomer.ts',
+            entry: 'lambda/handlers/notify-customer.ts',
             memorySize: 1024,
             environment: {
                 SENDER_EMAIL: 'laptev@hey.com'

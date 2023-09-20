@@ -1,6 +1,6 @@
 import {Category} from "../models/category";
-import {IdEvent} from "../models/idEvent";
-import {CategoryRepository} from "../repositories/categoryRepository";
+import {IdEvent} from "../models/id-event";
+import {CategoryRepository} from "../repositories/category-repository";
 
 const categoryRepository = new CategoryRepository();
 

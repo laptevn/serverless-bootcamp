@@ -2,9 +2,9 @@ import DynamoDB from 'aws-sdk/clients/dynamodb';
 import schema from './schema'
 import {Entity, Table} from "dynamodb-onetable";
 import {Product} from "../models/product";
-import {CategoryRepository} from "./categoryRepository";
-import {ProductEvent} from "../models/productEvent";
-import {SupplierRepository} from "./supplierRepository";
+import {CategoryRepository} from "./category-repository";
+import {ProductEvent} from "../models/product-event";
+import {SupplierRepository} from "./supplier-repository";
 
 export class ProductRepository {
     private readonly productModel;

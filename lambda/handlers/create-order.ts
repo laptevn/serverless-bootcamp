@@ -1,9 +1,9 @@
 import {Order} from "../models/order";
-import {OrderEvent} from "../models/orderEvent";
-import {OrderRepository} from "../repositories/orderRepository";
-import {ProductRepository} from "../repositories/productRepository";
-import {CategoryRepository} from "../repositories/categoryRepository";
-import {SupplierRepository} from "../repositories/supplierRepository";
+import {OrderEvent} from "../models/order-event";
+import {OrderRepository} from "../repositories/order-repository";
+import {ProductRepository} from "../repositories/product-repository";
+import {CategoryRepository} from "../repositories/category-repository";
+import {SupplierRepository} from "../repositories/supplier-repository";
 
 const AWS = require('aws-sdk');
 AWS.config.update({region: 'us-east-1'});

@@ -1,5 +1,5 @@
 import {Category} from "../models/category";
-import {CategoryRepository} from "../repositories/categoryRepository";
+import {CategoryRepository} from "../repositories/category-repository";
 
 const categoryRepository = new CategoryRepository();
 

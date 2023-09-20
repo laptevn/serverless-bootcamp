@@ -1,8 +1,8 @@
-import {IdEvent} from "../models/idEvent";
+import {IdEvent} from "../models/id-event";
 import {Product} from "../models/product";
-import {ProductRepository} from "../repositories/productRepository";
-import {CategoryRepository} from "../repositories/categoryRepository";
-import {SupplierRepository} from "../repositories/supplierRepository";
+import {ProductRepository} from "../repositories/product-repository";
+import {CategoryRepository} from "../repositories/category-repository";
+import {SupplierRepository} from "../repositories/supplier-repository";
 
 const productRepository = new ProductRepository(new CategoryRepository(), new SupplierRepository());
 

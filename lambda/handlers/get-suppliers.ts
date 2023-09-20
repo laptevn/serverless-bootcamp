@@ -1,5 +1,5 @@
 import {Supplier} from "../models/supplier";
-import {SupplierRepository} from "../repositories/supplierRepository";
+import {SupplierRepository} from "../repositories/supplier-repository";
 
 const supplierRepository = new SupplierRepository();
 
