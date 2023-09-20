@@ -25,10 +25,13 @@
     "@aws-cdk/aws-appsync": "^1.204.0",
     "@aws-cdk/aws-dynamodb": "^1.204.0",
     "@aws-cdk/aws-lambda": "^1.204.0",
+    "@aws-cdk/aws-lambda-event-sources": "^1.204.0",
     "@aws-cdk/aws-lambda-nodejs": "^1.204.0",
+    "@aws-cdk/aws-sqs": "^1.204.0",
     "@aws-cdk/core": "1.178.0",
     "aws-sdk": "^2.1459.0",
     "dynamodb-onetable": "^2.7.1",
+    "handlebars": "^4.7.8",
     "onetable-migrate": "^1.2.0"
   }
 }

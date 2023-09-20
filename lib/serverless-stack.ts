@@ -3,7 +3,10 @@ import * as appsync from '@aws-cdk/aws-appsync';
 import * as lambda from '@aws-cdk/aws-lambda-nodejs';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as cognito from '@aws-cdk/aws-cognito';
+import * as iam from '@aws-cdk/aws-iam';
+import * as lambdaEventSources from '@aws-cdk/aws-lambda-event-sources';
 import {Runtime} from "@aws-cdk/aws-lambda";
+import { Queue } from "@aws-cdk/aws-sqs";
 import {CfnOutput} from "@aws-cdk/core";
 
 export class ServerlessStack extends cdk.Stack {
@@ -79,16 +82,47 @@ export class ServerlessStack extends cdk.Stack {
         this.addLambdaResolver(api, 'removeProduct', 'Mutation', 'removeProduct', table);
         this.addLambdaResolver(api, 'getSuppliers', 'Query', 'suppliers', table);
         this.addLambdaResolver(api, 'getSupplier', 'Query', 'supplier', table);
+
+        const deadLetterQueue = new Queue(this, "onboarding-dlq", {
+            queueName: 'orders-dlq'
+        });
+        const queue = new Queue(this, 'orders', {
+            queueName: 'orders',
+            deadLetterQueue: {
+                queue: deadLetterQueue,
+                maxReceiveCount: 3
+            }
+        })
+        const createOrderFunction = this.addLambdaResolver(api, 'createOrder', 'Mutation', 'createOrder', table, queue.queueUrl);
+        queue.grantSendMessages(createOrderFunction);
+
+        const notifyCustomerFunction = new lambda.NodejsFunction(this as any, 'notifyCustomer', {
+            runtime: Runtime.NODEJS_16_X,
+            handler: 'handler',
+            entry: 'lambda/handlers/notifyCustomer.ts',
+            memorySize: 1024,
+            environment: {
+                SENDER_EMAIL: 'laptev@hey.com'
+            }
+        });
+        queue.grantConsumeMessages(notifyCustomerFunction);
+        notifyCustomerFunction.addEventSource(new lambdaEventSources.SqsEventSource(queue));
+        notifyCustomerFunction.addToRolePolicy(new iam.PolicyStatement({
+            actions: ['ses:SendEmail', 'SES:SendRawEmail'],
+            resources: ['*'],
+            effect: iam.Effect.ALLOW,
+        }));
     }
 
-    private addLambdaResolver(api: appsync.GraphqlApi, lambdaName: string, resolverTypeName: string, resolverFieldName: string, table: dynamodb.Table) {
+    private addLambdaResolver(api: appsync.GraphqlApi, lambdaName: string, resolverTypeName: string, resolverFieldName: string, table: dynamodb.Table, queueUrl: string = ''): lambda.NodejsFunction {
         const lambdaFunction = new lambda.NodejsFunction(this as any, lambdaName, {
             runtime: Runtime.NODEJS_16_X,
             handler: 'handler',
             entry: 'lambda/handlers/' + lambdaName + '.ts',
             memorySize: 1024,
             environment: {
-                TABLE_NAME: table.tableName
+                TABLE_NAME: table.tableName,
+                QUEUE_URL: queueUrl
             }
         });
         const dataSource = api.addLambdaDataSource(lambdaName + 'DataSource', lambdaFunction);
@@ -98,5 +132,6 @@ export class ServerlessStack extends cdk.Stack {
         });
 
         table.grantReadWriteData(lambdaFunction);
+        return lambdaFunction;
     }
 }

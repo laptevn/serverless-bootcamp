@@ -24,6 +24,19 @@ type Supplier {
     name: String!
 }
 
+type Order {
+    id: String!
+    address: String!
+    customer: String!
+    date: String!
+    details: [OrderDetails!]!
+}
+
+type OrderDetails {
+    product: String!
+    quantity: Float!
+}
+
 type Query {
     categories: [Category!]! @aws_auth(cognito_groups: ["admins", "customers"])
     category(id: String!): Category! @aws_auth(cognito_groups: ["admins", "customers"])
@@ -38,6 +51,17 @@ type Mutation {
     addProduct(product: ProductDTO!): Product! @aws_auth(cognito_groups: ["admins"])
     updateProduct(product: ProductDTO!): Product! @aws_auth(cognito_groups: ["admins"])
     removeProduct(id: String!): Boolean! @aws_auth(cognito_groups: ["admins"])
+    createOrder(order: OrderDTO!): Order! @aws_auth(cognito_groups: ["admins", "customers"])
+}
+
+input OrderDetailsDTO {
+    product: String!
+    quantity: Float!
+}
+
+input OrderDTO {
+    address: String!
+    details: [OrderDetailsDTO!]!
 }
 
 input ProductDTO {

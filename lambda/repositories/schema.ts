@@ -36,6 +36,15 @@ export default {
             sk: {type: String, value: '${id}'},
             id: {type: String, required: true, unique: true},
             name: {type: String, required: true}
+        },
+        Order: {
+            pk: {type: String, value: 'order'},
+            sk: {type: String, value: '${id}'},
+            id: {type: String, required: true, unique: true, generate: 'ulid'},
+            address: {type: String, required: true},
+            customer: {type: String, required: true},
+            date: {type: String, required: true},
+            details: {type: Array, required: true}
         }
     }
 }
