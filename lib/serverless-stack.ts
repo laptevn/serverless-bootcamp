@@ -2,15 +2,53 @@ import * as cdk from '@aws-cdk/core';
 import * as appsync from '@aws-cdk/aws-appsync';
 import * as lambda from '@aws-cdk/aws-lambda-nodejs';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
+import * as cognito from '@aws-cdk/aws-cognito';
 import {Runtime} from "@aws-cdk/aws-lambda";
+import {CfnOutput} from "@aws-cdk/core";
 
 export class ServerlessStack extends cdk.Stack {
     constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
         super(scope, id, props);
 
+        const userPool: cognito.UserPool = new cognito.UserPool(this, "ServerlessOnboardingUserPool", {
+            selfSignUpEnabled: true,
+            accountRecovery: cognito.AccountRecovery.NONE,
+            userVerification: {
+                emailStyle: cognito.VerificationEmailStyle.CODE,
+            },
+            autoVerify: {
+                email: true,
+            },
+            standardAttributes: {
+                email: {
+                    required: true,
+                    mutable: true,
+                },
+            }
+        });
+
+        const userPoolClient: cognito.UserPoolClient = new cognito.UserPoolClient(
+            this,
+            "UserPoolClient",
+            {
+                userPool,
+            }
+        );
+        new CfnOutput(this, "UserPoolClientId", {
+            value: userPoolClient.userPoolClientId,
+        });
+
         const api = new appsync.GraphqlApi(this, 'api', {
             name: 'api',
-            schema: appsync.Schema.fromAsset('graphql/schema.graphql')
+            schema: appsync.Schema.fromAsset('graphql/schema.graphql'),
+            authorizationConfig: {
+                defaultAuthorization: {
+                    authorizationType: appsync.AuthorizationType.USER_POOL,
+                    userPoolConfig: {
+                        userPool
+                    }
+                },
+            }
         });
 
         const table = new dynamodb.Table(this, 'Entries', {
@@ -51,9 +89,6 @@ export class ServerlessStack extends cdk.Stack {
             memorySize: 1024,
             environment: {
                 TABLE_NAME: table.tableName
-            },
-            bundling: {
-                nodeModules: ['dynamodb-onetable']
             }
         });
         const dataSource = api.addLambdaDataSource(lambdaName + 'DataSource', lambdaFunction);

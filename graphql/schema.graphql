@@ -25,19 +25,19 @@ type Supplier {
 }
 
 type Query {
-    categories: [Category!]!
-    category(id: String!): Category!
-    products(categoryId: String!): [Product!]!
-    productsBySupplier(supplierId: String!): [Product!]!
-    product(id: String!): Product!
-    suppliers: [Supplier!]!
-    supplier(id: String!): Supplier!
+    categories: [Category!]! @aws_auth(cognito_groups: ["admins", "customers"])
+    category(id: String!): Category! @aws_auth(cognito_groups: ["admins", "customers"])
+    products(categoryId: String!): [Product!]! @aws_auth(cognito_groups: ["admins", "customers"])
+    productsBySupplier(supplierId: String!): [Product!]! @aws_auth(cognito_groups: ["admins", "customers"])
+    product(id: String!): Product! @aws_auth(cognito_groups: ["admins", "customers"])
+    suppliers: [Supplier!]! @aws_auth(cognito_groups: ["admins", "customers"])
+    supplier(id: String!): Supplier! @aws_auth(cognito_groups: ["admins", "customers"])
 }
 
 type Mutation {
-    addProduct(product: ProductDTO!): Product!
-    updateProduct(product: ProductDTO!): Product!
-    removeProduct(id: String!): Boolean!
+    addProduct(product: ProductDTO!): Product! @aws_auth(cognito_groups: ["admins"])
+    updateProduct(product: ProductDTO!): Product! @aws_auth(cognito_groups: ["admins"])
+    removeProduct(id: String!): Boolean! @aws_auth(cognito_groups: ["admins"])
 }
 
 input ProductDTO {
