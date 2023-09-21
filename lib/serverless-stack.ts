@@ -4,10 +4,15 @@ import * as lambda from '@aws-cdk/aws-lambda-nodejs';
 import * as dynamodb from '@aws-cdk/aws-dynamodb';
 import * as cognito from '@aws-cdk/aws-cognito';
 import * as iam from '@aws-cdk/aws-iam';
+import * as s3 from '@aws-cdk/aws-s3';
+import * as sns from '@aws-cdk/aws-sns';
+import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
+import * as events from '@aws-cdk/aws-events';
 import * as lambdaEventSources from '@aws-cdk/aws-lambda-event-sources';
 import {Runtime} from "@aws-cdk/aws-lambda";
 import { Queue } from "@aws-cdk/aws-sqs";
 import {CfnOutput} from "@aws-cdk/core";
+import {LambdaFunction} from "@aws-cdk/aws-events-targets";
 
 export class ServerlessStack extends cdk.Stack {
     constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
@@ -96,13 +101,14 @@ export class ServerlessStack extends cdk.Stack {
         const createOrderFunction = this.addLambdaResolver(api, 'create-order', 'Mutation', 'createOrder', table, queue.queueUrl);
         queue.grantSendMessages(createOrderFunction);
 
+        const ownerEmail = 'laptev@hey.com';
         const notifyCustomerFunction = new lambda.NodejsFunction(this as any, 'notify-customer', {
             runtime: Runtime.NODEJS_16_X,
             handler: 'handler',
             entry: 'lambda/handlers/notify-customer.ts',
             memorySize: 1024,
             environment: {
-                SENDER_EMAIL: 'laptev@hey.com'
+                SENDER_EMAIL: ownerEmail
             }
         });
         queue.grantConsumeMessages(notifyCustomerFunction);
@@ -112,6 +118,48 @@ export class ServerlessStack extends cdk.Stack {
             resources: ['*'],
             effect: iam.Effect.ALLOW,
         }));
+
+        const s3Bucket = new s3.Bucket(this, 'order-reports', {
+            objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_ENFORCED,
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL
+        });
+
+        const rule = new events.Rule(this, 'report-rule', {
+            schedule: events.Schedule.cron({minute: '0', hour: '02', month: '*', weekDay: '*', year: '*'})
+        });
+        const reportingFunction = new lambda.NodejsFunction(this as any, 'report', {
+            runtime: Runtime.NODEJS_16_X,
+            handler: 'handler',
+            entry: 'lambda/handlers/report.ts',
+            memorySize: 1096,
+            environment: {
+                TABLE_NAME: table.tableName,
+                S3_BUCKET: s3Bucket.bucketName
+            },
+            bundling: {
+                externalModules: ["aws-sdk"],
+                nodeModules: ["@sparticuz/chromium"]
+            },
+            timeout: cdk.Duration.minutes(1)
+        });
+        rule.addTarget(new LambdaFunction(reportingFunction));
+        s3Bucket.grantReadWrite(reportingFunction);
+        table.grantReadWriteData(reportingFunction);
+
+        const reportNotification = new sns.Topic(this, 'report notification');
+        reportNotification.addSubscription(new subscriptions.EmailSubscription(ownerEmail));
+        const reportNotifyFunction = new lambda.NodejsFunction(this as any, 'report-notify', {
+            runtime: Runtime.NODEJS_16_X,
+            handler: 'handler',
+            entry: 'lambda/handlers/report-notify.ts',
+            memorySize: 1024,
+            environment: {
+                TOPIC_ARN: reportNotification.topicArn
+            },
+        });
+        reportNotification.grantPublish(reportNotifyFunction);
+        reportNotifyFunction.addEventSource(new lambdaEventSources.S3EventSource(s3Bucket, {events: [s3.EventType.OBJECT_CREATED]}));
+        s3Bucket.grantReadWrite(reportNotifyFunction);
     }
 
     private addLambdaResolver(api: appsync.GraphqlApi, lambdaName: string, resolverTypeName: string, resolverFieldName: string, table: dynamodb.Table, queueUrl: string = ''): lambda.NodejsFunction {

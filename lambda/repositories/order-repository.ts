@@ -22,8 +22,12 @@ export class OrderRepository {
         return await this.orderModel.create({
             address: event.arguments.order.address,
             customer: event.identity.claims.email,
-            date: new Date().toISOString(),
+            date: new Date().toLocaleDateString(),
             details: event.arguments.order.details
         }) as Order;
+    }
+
+    async getOrders(date: string): Promise<Order[]> {
+        return await this.orderModel.find({gsi1pk: date}, {index: 'gsi1'}) as Order[];
     }
 }

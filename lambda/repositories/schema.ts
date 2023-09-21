@@ -44,7 +44,9 @@ export default {
             address: {type: String, required: true},
             customer: {type: String, required: true},
             date: {type: String, required: true},
-            details: {type: Array, required: true}
+            details: {type: Array, required: true},
+            gsi1pk: {type: String, value: '${date}'},
+            gsi1sk: {type: String, value: '${id}'}
         }
     }
 }
