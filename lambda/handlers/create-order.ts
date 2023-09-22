@@ -1,4 +1,4 @@
-import {Order} from "../models/order";
+import {Order, OrderWithPrice} from "../models/order";
 import {OrderEvent} from "../models/order-event";
 import {OrderRepository} from "../repositories/order-repository";
 import {ProductRepository} from "../repositories/product-repository";
@@ -13,13 +13,17 @@ const stepFunctions = new StepFunctions();
 const orderRepository = new OrderRepository();
 const productRepository = new ProductRepository(new CategoryRepository(), new SupplierRepository());
 
-exports.handler = async function (event: OrderEvent): Promise<Order> {
+exports.handler = async function (event: OrderEvent): Promise<OrderWithPrice> {
     const order = await orderRepository.createOrder(event);
     await stepFunctions.startExecution({
         stateMachineArn: process.env.STEP_FUNCTION_ARN as string,
         input: JSON.stringify(await createOrderForNotification(order))
     }).promise();
-    return order;
+
+    return {
+        ...order,
+        totalPrice: await calculateTotalPrice(order)
+    }
 };
 
 async function createOrderForNotification(order: Order): Promise<Order> {
@@ -28,4 +32,12 @@ async function createOrderForNotification(order: Order): Promise<Order> {
         item.product = (await productRepository.getProduct(item.product)).name;
     }
     return result;
+}
+
+async function calculateTotalPrice(order: Order): Promise<number> {
+    let totalPrice = 0;
+    for (const item of order.details) {
+        totalPrice += item.quantity * (await productRepository.getProduct(item.product)).price;
+    }
+    return totalPrice;
 }

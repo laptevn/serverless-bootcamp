@@ -3,10 +3,14 @@ export type OrderDetails = {
     quantity: number;
 }
 
-export type Order = {
+export class Order {
     id: string;
     address: string;
     customer: string;
     date: string;
     details: [OrderDetails];
+}
+
+export class OrderWithPrice extends Order {
+    totalPrice: number;
 }

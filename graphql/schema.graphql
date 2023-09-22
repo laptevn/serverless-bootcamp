@@ -30,6 +30,7 @@ type Order {
     customer: String!
     date: String!
     details: [OrderDetails!]!
+    totalPrice: Float!
 }
 
 type OrderDetails {
@@ -52,6 +53,10 @@ type Mutation {
     updateProduct(product: ProductDTO!): Product! @aws_auth(cognito_groups: ["admins"])
     removeProduct(id: String!): Boolean! @aws_auth(cognito_groups: ["admins"])
     createOrder(order: OrderDTO!): Order! @aws_auth(cognito_groups: ["admins", "customers"])
+}
+
+type Subscription {
+    onNewOrder(minimalPrice: Float): Order @aws_subscribe(mutations: ["createOrder"]) @aws_auth(cognito_groups: ["admins"])
 }
 
 input OrderDetailsDTO {
