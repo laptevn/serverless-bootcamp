@@ -30,4 +30,12 @@ export class OrderRepository {
     async getOrders(date: string): Promise<Order[]> {
         return await this.orderModel.find({gsi1pk: date}, {index: 'gsi1'}) as Order[];
     }
+
+    async removeOrder(id: string): Promise<void> {
+        await this.orderModel.remove({id: id});
+    }
+
+    async getOrder(id: string): Promise<Order> {
+        return await this.orderModel.get({id: id}) as Order;
+    }
 }

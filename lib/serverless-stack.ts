@@ -8,10 +8,10 @@ import * as s3 from '@aws-cdk/aws-s3';
 import * as sns from '@aws-cdk/aws-sns';
 import * as subscriptions from '@aws-cdk/aws-sns-subscriptions';
 import * as events from '@aws-cdk/aws-events';
+import * as sfn from '@aws-cdk/aws-stepfunctions';
 import * as lambdaEventSources from '@aws-cdk/aws-lambda-event-sources';
-import {Runtime} from "@aws-cdk/aws-lambda";
-import { Queue } from "@aws-cdk/aws-sqs";
-import {CfnOutput} from "@aws-cdk/core";
+import * as tasks from '@aws-cdk/aws-stepfunctions-tasks';
+import {Runtime, FunctionUrlAuthType} from "@aws-cdk/aws-lambda";
 import {LambdaFunction} from "@aws-cdk/aws-events-targets";
 
 export class ServerlessStack extends cdk.Stack {
@@ -42,9 +42,6 @@ export class ServerlessStack extends cdk.Stack {
                 userPool,
             }
         );
-        new CfnOutput(this, "UserPoolClientId", {
-            value: userPoolClient.userPoolClientId,
-        });
 
         const api = new appsync.GraphqlApi(this, 'api', {
             name: 'api',
@@ -88,19 +85,6 @@ export class ServerlessStack extends cdk.Stack {
         this.addLambdaResolver(api, 'get-suppliers', 'Query', 'suppliers', table);
         this.addLambdaResolver(api, 'get-supplier', 'Query', 'supplier', table);
 
-        const deadLetterQueue = new Queue(this, "onboarding-dlq", {
-            queueName: 'orders-dlq'
-        });
-        const queue = new Queue(this, 'orders', {
-            queueName: 'orders',
-            deadLetterQueue: {
-                queue: deadLetterQueue,
-                maxReceiveCount: 3
-            }
-        })
-        const createOrderFunction = this.addLambdaResolver(api, 'create-order', 'Mutation', 'createOrder', table, queue.queueUrl);
-        queue.grantSendMessages(createOrderFunction);
-
         const ownerEmail = 'laptev@hey.com';
         const notifyCustomerFunction = new lambda.NodejsFunction(this as any, 'notify-customer', {
             runtime: Runtime.NODEJS_16_X,
@@ -111,8 +95,6 @@ export class ServerlessStack extends cdk.Stack {
                 SENDER_EMAIL: ownerEmail
             }
         });
-        queue.grantConsumeMessages(notifyCustomerFunction);
-        notifyCustomerFunction.addEventSource(new lambdaEventSources.SqsEventSource(queue));
         notifyCustomerFunction.addToRolePolicy(new iam.PolicyStatement({
             actions: ['ses:SendEmail', 'SES:SendRawEmail'],
             resources: ['*'],
@@ -146,23 +128,125 @@ export class ServerlessStack extends cdk.Stack {
         s3Bucket.grantReadWrite(reportingFunction);
         table.grantReadWriteData(reportingFunction);
 
-        const reportNotification = new sns.Topic(this, 'report notification');
-        reportNotification.addSubscription(new subscriptions.EmailSubscription(ownerEmail));
+        const reportNotificationTopic = new sns.Topic(this, 'report notification');
+        reportNotificationTopic.addSubscription(new subscriptions.EmailSubscription(ownerEmail));
         const reportNotifyFunction = new lambda.NodejsFunction(this as any, 'report-notify', {
             runtime: Runtime.NODEJS_16_X,
             handler: 'handler',
             entry: 'lambda/handlers/report-notify.ts',
             memorySize: 1024,
             environment: {
-                TOPIC_ARN: reportNotification.topicArn
+                TOPIC_ARN: reportNotificationTopic.topicArn
             },
         });
-        reportNotification.grantPublish(reportNotifyFunction);
+        reportNotificationTopic.grantPublish(reportNotifyFunction);
         reportNotifyFunction.addEventSource(new lambdaEventSources.S3EventSource(s3Bucket, {events: [s3.EventType.OBJECT_CREATED]}));
         s3Bucket.grantReadWrite(reportNotifyFunction);
+
+        const confirmationCallbackFunction = new lambda.NodejsFunction(this as any, 'confirmation-callback', {
+            runtime: Runtime.NODEJS_16_X,
+            handler: 'handler',
+            entry: 'lambda/handlers/confirmation-callback.ts',
+            memorySize: 1024
+        });
+        confirmationCallbackFunction.addToRolePolicy(new iam.PolicyStatement({
+            actions: ['states:SendTaskSuccess'],
+            resources: ['*'],
+            effect: iam.Effect.ALLOW,
+        }));
+        const confirmationCallbackURL = confirmationCallbackFunction.addFunctionUrl({
+            authType: FunctionUrlAuthType.NONE
+        })
+
+        const askShipmentConfirmationFunction = new lambda.NodejsFunction(this as any, 'ask-shipment-confirmation', {
+            runtime: Runtime.NODEJS_16_X,
+            handler: 'handler',
+            entry: 'lambda/handlers/ask-shipment-confirmation.ts',
+            memorySize: 1024,
+            environment: {
+                TOPIC_ARN: reportNotificationTopic.topicArn
+            },
+        });
+        reportNotificationTopic.grantPublish(askShipmentConfirmationFunction);
+
+        const shipmentConfirmedFunction = new lambda.NodejsFunction(this as any, 'shipment-confirmed', {
+            runtime: Runtime.NODEJS_16_X,
+            handler: 'handler',
+            entry: 'lambda/handlers/shipment-confirmed.ts',
+            memorySize: 1024,
+            environment: {
+                SENDER_EMAIL: ownerEmail,
+                TABLE_NAME: table.tableName
+            },
+        });
+        shipmentConfirmedFunction.addToRolePolicy(new iam.PolicyStatement({
+            actions: ['ses:SendEmail', 'SES:SendRawEmail'],
+            resources: ['*'],
+            effect: iam.Effect.ALLOW,
+        }));
+        table.grantReadWriteData(shipmentConfirmedFunction);
+
+        const shipmentCancelledFunction = new lambda.NodejsFunction(this as any, 'shipment-cancelled', {
+            runtime: Runtime.NODEJS_16_X,
+            handler: 'handler',
+            entry: 'lambda/handlers/shipment-cancelled.ts',
+            memorySize: 1024,
+            environment: {
+                SENDER_EMAIL: ownerEmail,
+                TABLE_NAME: table.tableName
+            },
+        });
+        shipmentCancelledFunction.addToRolePolicy(new iam.PolicyStatement({
+            actions: ['ses:SendEmail', 'SES:SendRawEmail'],
+            resources: ['*'],
+            effect: iam.Effect.ALLOW,
+        }));
+        table.grantReadWriteData(shipmentCancelledFunction);
+
+        const requestFeedbackFunction = new lambda.NodejsFunction(this as any, 'request-feedback', {
+            runtime: Runtime.NODEJS_16_X,
+            handler: 'handler',
+            entry: 'lambda/handlers/request-feedback.ts',
+            memorySize: 1024,
+            environment: {
+                SENDER_EMAIL: ownerEmail
+            },
+        });
+        requestFeedbackFunction.addToRolePolicy(new iam.PolicyStatement({
+            actions: ['ses:SendEmail', 'SES:SendRawEmail'],
+            resources: ['*'],
+            effect: iam.Effect.ALLOW,
+        }));
+
+        const orderStateMachine = new sfn.StateMachine(this, 'OrderStateMachine', {
+            definition: new tasks.LambdaInvoke(this, "NotifyCustomerTask", {
+                lambdaFunction: notifyCustomerFunction
+            }).next(new tasks.LambdaInvoke(this, "AskShipmentConfirmation", {
+                lambdaFunction: askShipmentConfirmationFunction,
+                integrationPattern: sfn.IntegrationPattern.WAIT_FOR_TASK_TOKEN,
+                payload: sfn.TaskInput.fromObject({
+                    taskToken: sfn.JsonPath.taskToken,
+                    payload: sfn.JsonPath.entirePayload,
+                    lambdaURL: confirmationCallbackURL.url
+                })
+            })).next(new sfn.Choice(this, 'Shipment Confirmation')
+                .when(sfn.Condition.stringEquals('$.status', 'approve'), new tasks.LambdaInvoke(this, "ShipmentConfirmed", {
+                    lambdaFunction: shipmentConfirmedFunction
+                }).next(new sfn.Wait(this, 'FeedbackDelay', {
+                    time: sfn.WaitTime.duration(cdk.Duration.seconds(10))
+                })).next(new tasks.LambdaInvoke(this, "RequestFeedback", {
+                    lambdaFunction: requestFeedbackFunction
+                })))
+                .otherwise(new tasks.LambdaInvoke(this, "ShipmentCancelled", {
+                    lambdaFunction: shipmentCancelledFunction
+                })))
+        });
+
+        const createOrderFunction = this.addLambdaResolver(api, 'create-order', 'Mutation', 'createOrder', table, orderStateMachine.stateMachineArn);
+        orderStateMachine.grantStartExecution(createOrderFunction);
     }
 
-    private addLambdaResolver(api: appsync.GraphqlApi, lambdaName: string, resolverTypeName: string, resolverFieldName: string, table: dynamodb.Table, queueUrl: string = ''): lambda.NodejsFunction {
+    private addLambdaResolver(api: appsync.GraphqlApi, lambdaName: string, resolverTypeName: string, resolverFieldName: string, table: dynamodb.Table, stepFunctionArn: string = ''): lambda.NodejsFunction {
         const lambdaFunction = new lambda.NodejsFunction(this as any, lambdaName, {
             runtime: Runtime.NODEJS_16_X,
             handler: 'handler',
@@ -170,7 +254,7 @@ export class ServerlessStack extends cdk.Stack {
             memorySize: 1024,
             environment: {
                 TABLE_NAME: table.tableName,
-                QUEUE_URL: queueUrl
+                STEP_FUNCTION_ARN: stepFunctionArn
             }
         });
         const dataSource = api.addLambdaDataSource(lambdaName + 'DataSource', lambdaFunction);

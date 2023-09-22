@@ -29,6 +29,7 @@
     "@aws-cdk/aws-lambda-event-sources": "^1.204.0",
     "@aws-cdk/aws-lambda-nodejs": "^1.204.0",
     "@aws-cdk/aws-sqs": "^1.204.0",
+    "@aws-cdk/aws-stepfunctions-tasks": "^1.204.0",
     "@aws-cdk/core": "^1.204.0",
     "@sparticuz/chromium": "^116.0.0",
     "aws-sdk": "^2.1459.0",

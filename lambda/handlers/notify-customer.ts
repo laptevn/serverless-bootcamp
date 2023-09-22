@@ -1,4 +1,3 @@
-import {SQSEvent} from "aws-lambda";
 import {Order} from "../models/order";
 import * as handlebars from 'handlebars';
 import {orderTemplate} from "../templates/order";
@@ -6,20 +5,24 @@ import {orderTemplate} from "../templates/order";
 const aws = require("aws-sdk");
 const ses = new aws.SES({region: 'us-east-1'});
 
-exports.handler = async function (event: SQSEvent): Promise<void> {
-    for (const record of event.Records) {
-        const order = JSON.parse(record.body) as Order;
-        console.log(order.customer);
-
+exports.handler = async function (event: Order, context: any, callback: any): Promise<void> {
+    try {
         await ses.sendEmail({
-            Destination: {ToAddresses: [order.customer]},
+            Destination: {ToAddresses: [event.customer]},
             Message: {
-                Body: {Html: {Data: createMessage(order)}},
+                Body: {Html: {Data: createMessage(event)}},
                 Subject: {Data: "Order confirmation"},
             },
             Source: process.env.SENDER_EMAIL
         }).promise();
+    } catch (e) {
+        console.error(e);
     }
+
+    callback(null, {
+        orderId: event.id,
+        customer: event.customer
+    });
 };
 
 function createMessage(order: Order): string {
