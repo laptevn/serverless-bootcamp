@@ -22,7 +22,7 @@ exports.handler = async function (event: any): Promise<void> {
 
 function extractParameters(url: string): { [key: string]: string } {
     const result: { [key: string]: string } = {};
-    url.split('?')[1].split('&').forEach(element => {
+    url.split('?')[1]?.split('&').forEach(element => {
         const [key, ...rest] = element.split('=');
         const value: string = rest.join('=');
         result[key] = value;

@@ -85,7 +85,7 @@ export class ServerlessStack extends cdk.Stack {
         this.addLambdaResolver(api, 'get-suppliers', 'Query', 'suppliers', table);
         this.addLambdaResolver(api, 'get-supplier', 'Query', 'supplier', table);
 
-        const ownerEmail = 'laptev@hey.com';
+        const ownerEmail = process.env.SHOP_OWNER_EMAIL as string;
         const notifyCustomerFunction = new lambda.NodejsFunction(this as any, 'notify-customer', {
             runtime: Runtime.NODEJS_16_X,
             handler: 'handler',
@@ -250,7 +250,7 @@ export class ServerlessStack extends cdk.Stack {
         const lambdaFunction = new lambda.NodejsFunction(this as any, lambdaName, {
             runtime: Runtime.NODEJS_16_X,
             handler: 'handler',
-            entry: 'lambda/handlers/' + lambdaName + '.ts',
+            entry: `lambda/handlers/${lambdaName}.ts`,
             memorySize: 1024,
             environment: {
                 TABLE_NAME: table.tableName,

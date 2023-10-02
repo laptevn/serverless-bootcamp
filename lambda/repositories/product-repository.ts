@@ -94,8 +94,8 @@ export class ProductRepository {
             throw new Error("Product not found");
         }
 
-        const category = await this.categoryRepository.getCategory(product?.category as string);
-        const supplier = await this.supplierRepository.getSupplier(product?.supplier as string);
+        const category = await this.categoryRepository.getCategory(product.category as string);
+        const supplier = await this.supplierRepository.getSupplier(product.supplier as string);
         return {
             id: product.id as string,
             name: product.name as string,
