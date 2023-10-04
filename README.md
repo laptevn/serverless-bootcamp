@@ -2,11 +2,12 @@
 Description of functionality https://docs.google.com/document/d/1ZepkVBOFnLs0OgfwmC7Hk4Q0nbseZwggK838qdKlD6o/edit
 
 ## How to?
-1. To build sources run `npm run build` command.
-2. To import initial data run `npm run import` command. Required only once. Please read limitations section.
-3. To migrate DB run `npm run migrate` command. Required only once. Please read limitations section.
-4. To deploy the app run `cdk deploy` command. Set SHOP_OWNER_EMAIL environment variable before deployment.
-5. To test API use any HTTP client. For example AppSync console. Credentials are below.
+1. To install dependencies run `npm install` command.
+2. To build sources run `npm run build` command.
+3. To deploy the app run `cdk deploy` command. Set SHOP_OWNER_EMAIL environment variable (e.g. laptev@hey.com) before deployment.
+4. To import initial data run `npm run import` command. Required only once. Please read limitations section.
+5. To migrate DB run `npm run migrate` command. Required only once. Please read limitations section.
+6. To test API use any HTTP client. For example AppSync console. Credentials are below.
 
 ## Known limitations
 There is a problem with node dependencies used in Lambdas and DB scripts (import and migration).<br>
