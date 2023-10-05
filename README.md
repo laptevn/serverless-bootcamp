@@ -22,3 +22,41 @@ So this step is performed manually - created data source with [this](subscriptio
 ## App Sync credentials
 admin/Admin!2admin
 customer/Customer!2customer
+
+## How to use API?
+Use any HTTP client, I will use AppSync web console further.<br>
+Accessing API without authentication and authorization will lead to errors. Click Login button right in Queries section of AppSync.<br>
+Please use admin or customer users (named like corresponding groups they belong) with credentials above.<br>
+
+The list of all supported operations can be found in [schema](graphql/schema.graphql) file.<br>
+Admins can do everything, customers can run all queries and only one mutation - create order.
+
+Queries operates over Category, Product, Supplier entities. Mutations support CUD operations over a product.<br>
+Example of listing all Categories:
+```
+query MyQuery {
+  categories {
+    id
+    name
+    description
+  }
+}
+```
+Create order mutation is used for triggering order management process.<br>
+Example of creating an order:
+```
+mutation MyMutation {
+  createOrder(order: {address: "New York", details: [{product: "01H98D66JC8FAYE", quantity: 10}]})
+    id
+    totalPrice
+    details {
+      product
+      quantity
+    }
+}
+```
+
+There is a subscription for new orders that sends new orders to admin using minimal price filtering.<br>
+
+Please watch [demo](https://www.loom.com/share/5e253156c3cc48e1a9aa8552e560a2e6) to see API in action.
+
